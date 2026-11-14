@@ -1,0 +1,24 @@
+prompt:1
+
+1.read my file does not anything change
+
+2.frontend folder to check 
+image,forgot password.jsx,login.jsx,regitser.jsx
+
+frontend\src\components\common
+this file inside to check buuton.jsx,input.jsx,loader,navbar
+
+default this to fetch so this file to check C:\Users\WELCOME\OneDrive\Desktop\Jio Hotstar Clone\frontend\src\data\newReleases.js
+
+C:\Users\WELCOME\OneDrive\Desktop\Jio Hotstar Clone\frontend\src\App.jsx
+
+C:\Users\WELCOME\OneDrive\Desktop\Jio Hotstar Clone\frontend\src\index.css
+
+this file also to check
+
+
+backnd file inside .env node modules and service Account key.json remaining file read okay
+
+read after clear short summary required 
+
+does nt anything change
