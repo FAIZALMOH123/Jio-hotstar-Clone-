@@ -12,7 +12,18 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: env.frontendOrigin,
+    origin: (origin, callback) => {
+      // Allow requests from localhost, Netlify domains, or specified frontendOrigin
+      if (
+        !origin ||
+        origin.startsWith("http://localhost") ||
+        origin.endsWith(".netlify.app") ||
+        origin === env.frontendOrigin
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   }),
 );
