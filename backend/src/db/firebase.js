@@ -1,28 +1,37 @@
 import "dotenv/config";
-
-import { initializeApp, applicationDefault, getApps } from "firebase-admin/app";
-
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
+import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
-let firebaseApp;
+const keyUrl = new URL("../../serviceAccountKey.json", import.meta.url);
+const keyPath = fileURLToPath(keyUrl);
 
-try {
-  const apps = getApps();
+let app = getApps()[0];
 
-  if (apps.length === 0) {
-    firebaseApp = initializeApp({
-      credential: applicationDefault(),
-    });
-  } else {
-    firebaseApp = apps[0];
+if (!app) {
+  try {
+    if (fs.existsSync(keyPath)) {
+      const serviceAccount = JSON.parse(fs.readFileSync(keyPath, "utf8"));
+      app = initializeApp({ credential: cert(serviceAccount) });
+    } else {
+      app = initializeApp({ credential: applicationDefault() });
+    }
+  } catch (error) {
+    console.error("Firebase initialization failed:", error.code || error.message || "configuration error");
   }
-
-  console.log("Firebase initialized successfully");
-} catch (error) {
-  console.error("Firebase initialization error:", error.message);
-  process.exit(1);
 }
 
-export const auth = getAuth(firebaseApp);
-export const db = getFirestore(firebaseApp);
+export const auth = app ? getAuth(app) : null;
+export const firestore = app ? getFirestore(app) : null;
+
+export const warmupFirebase = async () => {
+  try {
+    if (firestore) {
+      await firestore.collection("counters").doc("users").get();
+    }
+  } catch (err) {
+    console.warn("Firebase background warmup warning:", err?.message || err);
+  }
+};

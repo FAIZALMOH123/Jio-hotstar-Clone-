@@ -14,6 +14,24 @@ import Sports from "./pages/Sports/Sports";
 import Sparks from "./pages/Sparks/Sparks";
 import Categories from "./pages/Categories/Categories";
 import Profile from "./pages/Profile/Profile";
+import EmailVerified from "./pages/Auth/EmailVerified";
+import ProtectedRoute from "./routes/ProtectedRoute";
+import { useMovies } from "./hooks/useMovies";
+
+const CatalogStatus = () => {
+  const { error, reloadMovies } = useMovies();
+  if (!error) return null;
+  return (
+    <div role="alert" className="fixed left-1/2 top-4 z-[100] flex -translate-x-1/2 items-center gap-3 rounded-xl border border-rose-300/30 bg-gray-950/95 px-4 py-3 text-sm text-rose-100 shadow-xl">
+      <span>{error}</span>
+      <button type="button" onClick={reloadMovies} className="font-semibold underline">Retry</button>
+    </div>
+  );
+};
+
+const protectedPage = (Page) => (
+  <ProtectedRoute><Page /></ProtectedRoute>
+);
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -34,22 +52,24 @@ const App = () => {
       </div>
 
       <ScrollToTop />
+      <CatalogStatus />
       <div className="relative z-10">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/home" element={<Home />} />
+          <Route path="/" element={protectedPage(Home)} />
+          <Route path="/home" element={protectedPage(Home)} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/newjio" element={<NewonJioHotstar />} />
-          <Route path="/watch" element={<Watch />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/shows" element={<Shows />} />
-          <Route path="/movies" element={<Movies />} />
-          <Route path="/sports" element={<Sports />} />
-          <Route path="/sparks" element={<Sparks />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/email-verified" element={<EmailVerified />} />
+          <Route path="/newjio" element={protectedPage(NewonJioHotstar)} />
+          <Route path="/watch" element={protectedPage(Watch)} />
+          <Route path="/search" element={protectedPage(Search)} />
+          <Route path="/shows" element={protectedPage(Shows)} />
+          <Route path="/movies" element={protectedPage(Movies)} />
+          <Route path="/sports" element={protectedPage(Sports)} />
+          <Route path="/sparks" element={protectedPage(Sparks)} />
+          <Route path="/categories" element={protectedPage(Categories)} />
+          <Route path="/profile" element={protectedPage(Profile)} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

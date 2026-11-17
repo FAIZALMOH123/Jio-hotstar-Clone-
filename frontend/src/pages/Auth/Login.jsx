@@ -1,12 +1,15 @@
-import React from "react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
-import { useState } from "react";
-import { Link } from "react-router-dom";
-
 import { FaUser, FaLock, FaArrowRight } from "react-icons/fa";
+import { useAuth } from "../../hooks/useAuth";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { signIn } = useAuth();
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -19,6 +22,16 @@ const Login = () => {
     });
   };
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    setIsSubmitting(true);
+    const result = await signIn(formData);
+    setIsSubmitting(false);
+    if (result.success) navigate("/home", { replace: true });
+    else setMessage(result.message || "Could not sign in.");
+  };
+
   return (
     <div className="auth-page bg main-div flex items-center justify-center md:justify-end min-h-screen py-10 px-4 sm:px-6">
       <div className="auth-card w-full max-w-md p-8 rounded-xl shadow-2xl md:mr-20 lg:mr-36 border border-gray-700/80">
@@ -27,7 +40,9 @@ const Login = () => {
           Join JioHotstar and start watching.
         </p>
 
-        <form onSubmit={(e) => e.preventDefault()}>
+        {message && <p role="alert" className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300">{message}</p>}
+
+        <form onSubmit={handleSubmit}>
           <Input
             name="email"
             onChange={handleChange}
@@ -54,8 +69,8 @@ const Login = () => {
             Forgot Password?
           </Link>
 
-          <Button type="submit">
-            Login
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Login"}
             <span className="ml-2">
               <FaArrowRight />
             </span>
@@ -65,7 +80,7 @@ const Login = () => {
         <p className="text-center text-gray-400 text-sm mt-5">
           Don't have an account?{" "}
           <Link to="/register" className="text-blue-400 hover:text-blue-300 font-medium ml-1 transition-colors">
-            Register
+            Create account
           </Link>
         </p>
       </div>

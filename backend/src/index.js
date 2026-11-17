@@ -1,23 +1,27 @@
-import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import { env } from "./config/env.js";
 
-import authRoutes from "./routes/authRoutes.js";
+import authRoutes from "./auth/routes/authRoutes.js";
+import movieRoutes from "./movies/routes/movieRoutes.js";
+import { errorMiddleware } from "./middlewares/errorMiddleware.js";
+import { warmupFirebase } from "./db/firebase.js";
 
 const app = express();
 
 // Middleware
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: env.frontendOrigin,
+    credentials: true,
   }),
 );
 
 app.use(express.json());
 
-// Test API
+// Root Health Check API
 app.get("/", (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
     message: "JioHotstar backend is running",
   });
@@ -25,6 +29,7 @@ app.get("/", (req, res) => {
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
+app.use("/api/movies", movieRoutes);
 
 // Handle unknown routes
 app.use((req, res) => {
@@ -34,9 +39,12 @@ app.use((req, res) => {
   });
 });
 
+app.use(errorMiddleware);
+
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = env.port;
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  warmupFirebase().catch(() => {});
 });

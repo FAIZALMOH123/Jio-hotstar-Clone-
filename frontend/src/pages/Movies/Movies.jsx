@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
-import heroDeadpool from "../../assets/images/deadpool-wolverine-3840x2160-17300.jpg";
-import { newReleases, homeAloneMovie } from "../../data/newReleases";
+import MovieCard from "../../components/common/MovieCard";
+import { useMovies } from "../../hooks/useMovies";
 import { FaPlay } from "react-icons/fa";
+
+const heroDeadpool = "/images/deadpool-wolverine-3840x2160-17300.jpg";
 
 const movieCategories = [
   "All",
@@ -20,6 +22,7 @@ const movieCategories = [
 
 const Movies = () => {
   const navigate = useNavigate();
+  const { movies: newReleases } = useMovies();
   const [selectedGenre, setSelectedGenre] = useState("All");
 
   const heroMovie = {
@@ -49,8 +52,14 @@ const Movies = () => {
             )
         );
 
+  const familyFavorites = newReleases.filter((m) =>
+    m.genres?.some((g) =>
+      ["Comedy", "Family", "Kids", "Animation"].includes(g)
+    )
+  );
+
   return (
-    <div className="flex min-h-screen w-full flex-row items-start bg-transparent text-white pl-0 md:pl-20">
+    <div className="flex min-h-screen w-full flex-row items-start bg-transparent text-white pl-0 md:pl-20 home-page-enter">
       <Navbar />
 
       <main className="min-w-0 flex-1 overflow-x-hidden pb-24">
@@ -102,13 +111,13 @@ const Movies = () => {
                 className="glass-button-primary inline-flex items-center gap-2.5 rounded-2xl px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-xl cursor-pointer"
               >
                 <FaPlay className="text-xs" />
-                <span>Watch Now</span>
+                <span>Watch Trailer</span>
               </button>
 
               <button
                 type="button"
                 onClick={() =>
-                  navigate("/watch", { state: { movie: heroMovie } })
+                  navigate("/watch", { state: { movie: heroMovie, autoPlay: true } })
                 }
                 className="glass-button inline-flex items-center gap-2 rounded-2xl px-5 py-3.5 text-sm sm:text-base font-semibold text-white cursor-pointer"
               >
@@ -149,75 +158,32 @@ const Movies = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
             {filteredMovies.map((movie) => (
-              <article
-                key={movie.title}
-                onClick={() => navigate("/watch", { state: { movie } })}
-                className="glass-card group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg"
-              >
-                <div className="aspect-3/4 w-full overflow-hidden">
-                  <img
-                    src={movie.image}
-                    alt={movie.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                  <div className="glass-panel absolute inset-0 flex flex-col justify-end p-3 opacity-0 transition-opacity group-hover:opacity-100 rounded-2xl">
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-950 mb-2 shadow-xl">
-                      <FaPlay className="ml-0.5 text-xs" />
-                    </span>
-                    <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-1">
-                      {movie.title}
-                    </h3>
-                    <p className="text-[11px] text-gray-300">
-                      {movie.duration || movie.detail}
-                    </p>
-                  </div>
-                </div>
-              </article>
+              <MovieCard
+                key={movie.slug || movie.title || movie.name}
+                movie={movie}
+              />
             ))}
           </div>
         </section>
 
-        {/* Family & Comedy Section (Includes Home Alone!) */}
-        <section className="px-4 pt-10 sm:px-8 lg:px-12">
-          <h2 className="mb-4 text-xl sm:text-2xl font-bold text-white drop-shadow">
-            Family & Comedy Favorites
-          </h2>
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {[homeAloneMovie, newReleases[1], newReleases[2], newReleases[3], newReleases[9]].map(
-              (m, i) =>
-                m && (
-                  <article
-                    key={`${m.title}-${i}`}
-                    onClick={() => navigate("/watch", { state: { movie: m } })}
-                    className="glass-card group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg"
-                  >
-                    <div className="aspect-3/4 w-full overflow-hidden">
-                      <img
-                        src={m.image}
-                        alt={m.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
-                      />
-                      <div className="glass-panel absolute inset-0 flex flex-col justify-end p-3 opacity-0 transition-opacity group-hover:opacity-100 rounded-2xl">
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-950 mb-2 shadow-xl">
-                          <FaPlay className="ml-0.5 text-xs" />
-                        </span>
-                        <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-1">
-                          {m.title}
-                        </h3>
-                        <p className="text-[11px] text-gray-300">
-                          {m.duration || m.detail}
-                        </p>
-                      </div>
-                    </div>
-                  </article>
-                )
-            )}
-          </div>
-        </section>
+        {/* Family & Comedy Section */}
+        {familyFavorites.length > 0 && (
+          <section className="px-4 pt-10 sm:px-8 lg:px-12">
+            <h2 className="mb-4 text-xl sm:text-2xl font-bold text-white drop-shadow">
+              Family & Comedy Favorites
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
+              {familyFavorites.map((movie) => (
+                <MovieCard
+                  key={movie.slug || movie.title || movie.name}
+                  movie={movie}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );

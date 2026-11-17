@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
-import heroImage from "../../assets/images/deadpool-wolverine-3840x2160-17300.jpg";
-import spiderManImage from "../../assets/images/spider-man-brand-3840x2160-26612.jpg";
-import godzillaImage from "../../assets/images/godzilla-minus-zero-3840x2160-27257.jpg";
-import evilDeadImage from "../../assets/images/evil-dead-burn-2026-3840x2160-27067.jpg";
-import { newReleases } from "../../data/newReleases";
+import MovieCard from "../../components/common/MovieCard";
+import { useMovies } from "../../hooks/useMovies";
 import { FaPlay, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-const movies = [
+const heroImage = "/images/deadpool-wolverine-3840x2160-17300.jpg";
+const spiderManImage = "/images/spider-man-brand-3840x2160-26612.jpg";
+const godzillaImage = "/images/godzilla-minus-zero-3840x2160-27257.jpg";
+const evilDeadImage = "/images/evil-dead-burn-2026-3840x2160-27067.jpg";
+
+const heroMovies = [
   {
     name: "Deadpool and Wolverine",
     image: heroImage,
@@ -75,21 +77,138 @@ const movies = [
   },
 ];
 
-const topTenMovies = [
-  newReleases[3],
-  newReleases[4],
-  newReleases[0],
-  newReleases[2],
-  newReleases[5],
-  newReleases[1],
-  newReleases[6],
-  newReleases[7],
-  movies[0],
-  movies[1],
-];
+const MovieCategoryRow = ({ title, movies = [], categoryParam }) => {
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const checkScroll = () => {
+      setCanScrollLeft(el.scrollLeft > 5);
+      setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 5);
+    };
+    checkScroll();
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [movies]);
+
+  if (!movies || movies.length === 0) return null;
+
+  const targetCategory = categoryParam || title;
+
+  return (
+    <section className="px-4 pb-8 pt-4 sm:px-8 sm:pb-10 sm:pt-5 lg:px-12 category-row-contain" aria-label={title}>
+      <div className="mb-3 sm:mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white sm:text-2xl drop-shadow">
+          {title}
+        </h2>
+        <Link
+          to={`/newjio?category=${encodeURIComponent(targetCategory)}`}
+          className="inline-flex shrink-0 items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-300 transition-colors hover:text-white cursor-pointer"
+        >
+          View all <FaChevronRight aria-hidden="true" />
+        </Link>
+      </div>
+      <div className="relative group/row">
+        <div
+          ref={scrollRef}
+          className="hide-scrollbar grid grid-flow-col auto-cols-[45%] sm:auto-cols-[30%] md:auto-cols-[23%] lg:auto-cols-[18%] xl:auto-cols-[15.5%] items-start gap-3 sm:gap-4 overflow-x-auto overflow-y-hidden pb-4 smooth-scroll-x"
+        >
+          {movies.map((movie) => (
+            <MovieCard
+              key={movie.slug || movie.title || movie.name}
+              movie={movie}
+            />
+          ))}
+        </div>
+
+        {canScrollLeft && (
+          <button
+            type="button"
+            aria-label={`Scroll ${title} left`}
+            onClick={() =>
+              scrollRef.current?.scrollBy({
+                left: -scrollRef.current.clientWidth * 0.75,
+                behavior: "smooth",
+              })
+            }
+            className="absolute left-2 top-1/2 z-20 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/80 text-white shadow-xl backdrop-blur-md transition-all hover:bg-gray-800 hover:scale-110 cursor-pointer"
+          >
+            <FaChevronLeft aria-hidden="true" />
+          </button>
+        )}
+        {canScrollRight && (
+          <button
+            type="button"
+            aria-label={`Scroll ${title} right`}
+            onClick={() =>
+              scrollRef.current?.scrollBy({
+                left: scrollRef.current.clientWidth * 0.75,
+                behavior: "smooth",
+              })
+            }
+            className="absolute right-2 top-1/2 z-20 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/80 text-white shadow-xl backdrop-blur-md transition-all hover:bg-gray-800 hover:scale-110 cursor-pointer"
+          >
+            <FaChevronRight aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    </section>
+  );
+};
 
 const Home = () => {
   const navigate = useNavigate();
+  const { movies: newReleases } = useMovies();
+
+  const topTenMovies = useMemo(() => {
+    return newReleases.slice(0, 10);
+  }, [newReleases]);
+
+  const actionMovies = useMemo(() => {
+    return newReleases.filter((m) =>
+      m.genres?.some((g) =>
+        ["Action", "Sci-Fi", "Science Fiction", "Super Heroes", "Kaiju", "Martial Arts"].includes(g)
+      )
+    );
+  }, [newReleases]);
+
+  const thrillerMovies = useMemo(() => {
+    return newReleases.filter((m) =>
+      m.genres?.some((g) =>
+        ["Thriller", "Horror", "Mystery", "Crime", "Supernatural"].includes(g)
+      )
+    );
+  }, [newReleases]);
+
+  const feelGoodMovies = useMemo(() => {
+    return newReleases.filter((m) =>
+      m.genres?.some((g) =>
+        ["Comedy", "Family", "Kids", "Animation", "Children", "Dramedy"].includes(g)
+      )
+    );
+  }, [newReleases]);
+
+  const romanticMovies = useMemo(() => {
+    return newReleases.filter((m) =>
+      m.genres?.some((g) => ["Romance", "Drama"].includes(g))
+    );
+  }, [newReleases]);
+
+  const adventureMovies = useMemo(() => {
+    return newReleases.filter((m) =>
+      m.genres?.some((g) =>
+        ["Adventure", "Fantasy", "Epic", "Super Heroes"].includes(g)
+      )
+    );
+  }, [newReleases]);
+
   const [activeSlide, setActiveSlide] = useState(0);
   const [canScrollReleasesLeft, setCanScrollReleasesLeft] = useState(false);
   const [canScrollReleases, setCanScrollReleases] = useState(true);
@@ -100,7 +219,7 @@ const Home = () => {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setActiveSlide((currentSlide) => (currentSlide + 1) % movies.length);
+      setActiveSlide((currentSlide) => (currentSlide + 1) % heroMovies.length);
     }, 6000);
 
     return () => window.clearInterval(timer);
@@ -149,51 +268,53 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen w-full flex-row items-start bg-transparent pl-0 text-white text-2xl md:pl-20">
+    <div className="flex min-h-screen w-full flex-row items-start bg-transparent pl-0 text-white md:pl-20 home-page-enter">
       <Navbar />
 
-      <main className="relative min-w-0 flex-1 overflow-x-hidden bg-transparent">
+      <main className="relative min-w-0 flex-1 overflow-x-hidden bg-transparent pb-16 md:pb-8">
+        {/* Hero Slideshow Banner - Fully responsive across mobile, tab, and laptop */}
         <section
           aria-label="Featured movies"
-          className="relative h-screen min-h-140"
+          className="relative min-h-[72vh] sm:min-h-[80vh] lg:h-screen lg:min-h-140 overflow-hidden"
         >
           <div
             className="absolute inset-0 flex transition-transform duration-700 ease-in-out"
             style={{
-              width: `${movies.length * 100}%`,
-              transform: `translateX(-${(activeSlide * 100) / movies.length}%)`,
+              width: `${heroMovies.length * 100}%`,
+              transform: `translateX(-${(activeSlide * 100) / heroMovies.length}%)`,
             }}
           >
-            {movies.map((movie, index) => (
+            {heroMovies.map((movie, index) => (
               <article
                 key={movie.imageAlt}
                 className="relative h-full shrink-0"
-                style={{ width: `${100 / movies.length}%` }}
+                style={{ width: `${100 / heroMovies.length}%` }}
               >
                 <div className="absolute inset-0">
                   <img
                     src={movie.image}
                     alt={movie.imageAlt}
                     className="h-full w-full object-cover object-center"
+                    loading={index === 0 ? "eager" : "lazy"}
                   />
-                  <div className="absolute inset-0 bg-linear-to-r from-gray-950/95 via-gray-950/65 to-transparent" />
-                  <div className="absolute inset-0 bg-linear-to-t from-gray-950 via-transparent to-gray-950/15" />
+                  <div className="absolute inset-0 bg-linear-to-r from-gray-950/95 via-gray-950/70 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-gray-950 via-transparent to-gray-950/20" />
                 </div>
 
                 <section
                   aria-hidden={activeSlide !== index}
-                  className="relative z-10 flex h-full max-w-2xl flex-col justify-center px-6 pb-24 pt-20 sm:px-10 lg:px-14"
+                  className="relative z-10 flex h-full max-w-2xl flex-col justify-center px-5 pb-24 pt-16 sm:px-10 sm:pb-28 lg:px-14 lg:pt-20"
                 >
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-red-400 sm:text-sm">
+                  <p className="mb-2 sm:mb-3 text-xs font-bold uppercase tracking-[0.22em] text-red-400 sm:text-sm">
                     {movie.studio}
                   </p>
                   <h1
                     onClick={() =>
                       navigate("/watch", {
-                        state: { movie: movies[activeSlide] },
+                        state: { movie: heroMovies[activeSlide], autoPlay: true },
                       })
                     }
-                    className="max-w-xl text-4xl font-black uppercase leading-[0.95] tracking-[0.04em] sm:text-6xl lg:text-7xl cursor-pointer transition-opacity hover:opacity-90"
+                    className="max-w-xl text-3xl sm:text-5xl lg:text-7xl font-black uppercase leading-[0.96] tracking-[0.03em] cursor-pointer transition-opacity hover:opacity-90"
                     style={{
                       color: movie.titleColor,
                       textShadow: movie.titleShadow,
@@ -203,7 +324,7 @@ const Home = () => {
                     {movie.title}
                   </h1>
 
-                  <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-semibold text-gray-200 sm:text-base">
+                  <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs sm:text-base font-semibold text-gray-200">
                     <span>{movie.year}</span>
                     <span aria-hidden="true" className="text-red-400">
                       •
@@ -215,43 +336,56 @@ const Home = () => {
                     <span>{movie.languages}</span>
                   </div>
 
-                  <p className="mt-5 max-w-lg text-sm leading-6 text-gray-200 sm:text-base sm:leading-7">
+                  <p className="mt-3 sm:mt-5 max-w-lg text-xs leading-5 sm:text-base sm:leading-7 text-gray-200 line-clamp-3 sm:line-clamp-none">
                     {movie.description}
                   </p>
 
-                  <p className="mt-5 text-sm font-semibold leading-6 text-white sm:text-base">
+                  <p className="mt-3 sm:mt-5 text-xs sm:text-base font-semibold text-white">
                     {movie.genres.map((genre, genreIndex) => (
                       <span key={genre}>
                         {genreIndex > 0 && (
-                          <span className="mx-2 text-gray-400">|</span>
+                          <span className="mx-1.5 sm:mx-2 text-gray-400">|</span>
                         )}
                         {genre}
                       </span>
                     ))}
                   </p>
 
-                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-2.5 sm:gap-3">
                     <button
                       type="button"
                       onClick={() =>
                         navigate("/watch", {
-                          state: { movie: movies[activeSlide] },
+                          state: { movie: heroMovies[activeSlide], autoPlay: true },
                         })
                       }
-                      className="glass-button-primary inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl px-8 py-3.5 text-base font-bold text-white shadow-xl cursor-pointer sm:min-w-72 sm:text-lg"
+                      className="glass-button-primary inline-flex min-h-11 sm:min-h-14 items-center justify-center gap-2.5 sm:gap-3 rounded-2xl px-5 sm:px-8 py-2.5 sm:py-3.5 text-sm sm:text-lg font-bold text-white shadow-xl cursor-pointer"
                     >
-                      <FaPlay aria-hidden="true" className="text-sm" />
+                      <FaPlay aria-hidden="true" className="text-xs sm:text-sm" />
                       {movie.action}
                     </button>
                     <button
                       type="button"
                       onClick={() =>
                         navigate("/watch", {
-                          state: { movie: movies[activeSlide] },
+                          state: { movie: heroMovies[activeSlide], autoPlay: true },
+                        })
+                      }
+                      title="Watch Official Trailer"
+                      className="glass-button inline-flex min-h-11 sm:min-h-14 items-center justify-center gap-2 rounded-2xl px-4 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-base font-bold text-white cursor-pointer hover:border-red-500/50 hover:bg-red-600/20 shadow-lg"
+                    >
+                      <FaPlay className="text-xs sm:text-sm text-red-500" />
+                      Watch Trailer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate("/watch", {
+                          state: { movie: heroMovies[activeSlide] },
                         })
                       }
                       aria-label={`Add ${movie.name} to your watchlist`}
-                      className="glass-button inline-flex h-14 w-14 items-center justify-center rounded-2xl text-xl text-white cursor-pointer"
+                      className="glass-button inline-flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl text-base sm:text-xl text-white cursor-pointer"
                     >
                       <FaPlus aria-hidden="true" />
                     </button>
@@ -261,89 +395,77 @@ const Home = () => {
             ))}
           </div>
 
-          <div className="absolute bottom-7 right-5 z-20 flex items-center gap-3 sm:bottom-9 sm:right-10">
+          <div className="absolute bottom-6 right-4 z-20 flex items-center gap-2 sm:bottom-9 sm:right-10 sm:gap-3">
             <button
               type="button"
               aria-label="Previous movie"
               onClick={() =>
                 setActiveSlide(
-                  (activeSlide + movies.length - 1) % movies.length,
+                  (activeSlide + heroMovies.length - 1) % heroMovies.length,
                 )
               }
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-gray-950/50 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+              className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/25 bg-gray-950/50 text-white backdrop-blur-md transition-colors hover:bg-white/20 cursor-pointer"
             >
-              <FaChevronLeft aria-hidden="true" />
+              <FaChevronLeft className="text-xs sm:text-base" aria-hidden="true" />
             </button>
             <div
-              className="flex items-center gap-2"
-              aria-label={`Slide ${activeSlide + 1} of ${movies.length}`}
+              className="flex items-center gap-1.5 sm:gap-2"
+              aria-label={`Slide ${activeSlide + 1} of ${heroMovies.length}`}
             >
-              {movies.map((movie, index) => (
+              {heroMovies.map((movie, index) => (
                 <button
                   key={movie.imageAlt}
                   type="button"
                   aria-label={`Go to slide ${index + 1}`}
                   aria-current={activeSlide === index ? "true" : undefined}
                   onClick={() => setActiveSlide(index)}
-                  className={`h-2 rounded-full transition-[width,background-color] duration-300 ${activeSlide === index ? "w-7 bg-white" : "w-2 bg-white/50 hover:bg-white/80"}`}
+                  className={`h-1.5 sm:h-2 rounded-full transition-[width,background-color] duration-300 cursor-pointer ${
+                    activeSlide === index ? "w-5 sm:w-7 bg-white" : "w-1.5 sm:w-2 bg-white/50 hover:bg-white/80"
+                  }`}
                 />
               ))}
             </div>
             <button
               type="button"
               aria-label="Next movie"
-              onClick={() => setActiveSlide((activeSlide + 1) % movies.length)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-gray-950/50 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+              onClick={() => setActiveSlide((activeSlide + 1) % heroMovies.length)}
+              className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/25 bg-gray-950/50 text-white backdrop-blur-md transition-colors hover:bg-white/20 cursor-pointer"
             >
-              <FaChevronRight aria-hidden="true" />
+              <FaChevronRight className="text-xs sm:text-base" aria-hidden="true" />
             </button>
           </div>
         </section>
 
+        {/* Top 10 on JioHotstar Row */}
         <section
-          className="px-5 pb-5 pt-7 sm:px-8 lg:px-12"
+          className="px-4 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-7 lg:px-12 category-row-contain"
           aria-labelledby="top-ten-heading"
         >
-          <h2
-            id="top-ten-heading"
-            className="mb-5 text-xl font-bold text-white sm:text-2xl"
-          >
-            Top 10 on JioHotstar
-          </h2>
-          <div className="relative">
+          <div className="mb-3 sm:mb-4 flex items-center justify-between">
+            <h2
+              id="top-ten-heading"
+              className="text-lg font-bold text-white sm:text-2xl drop-shadow"
+            >
+              Top 10 on JioHotstar
+            </h2>
+            <Link
+              to="/newjio?category=Top%2010"
+              className="inline-flex shrink-0 items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-300 transition-colors hover:text-white cursor-pointer"
+            >
+              View all <FaChevronRight aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="relative group/row">
             <div
               ref={topTenCarouselRef}
-              className="hide-scrollbar grid grid-flow-col auto-cols-[68%] items-start gap-3 overflow-x-auto overflow-y-hidden pb-4 sm:auto-cols-[34%] sm:gap-4 lg:auto-cols-[19%]"
+              className="hide-scrollbar grid grid-flow-col auto-cols-[45%] sm:auto-cols-[30%] md:auto-cols-[23%] lg:auto-cols-[18%] xl:auto-cols-[15.5%] items-start gap-3 sm:gap-4 overflow-x-auto overflow-y-hidden pb-4 smooth-scroll-x"
             >
               {topTenMovies.map((movie, index) => (
-                <article
-                  key={movie.title}
-                  onClick={() => navigate("/watch", { state: { movie } })}
-                  className="group relative min-w-0 pl-7 cursor-pointer"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-10 left-0 z-10 select-none text-[8rem] font-black leading-[0.78] text-gray-950 [-webkit-text-stroke:2px_rgba(255,255,255,0.85)] [text-shadow:2px_3px_12px_rgba(0,0,0,0.9)] sm:text-[9rem] transition-transform duration-300 group-hover:scale-105"
-                  >
-                    {index + 1}
-                  </span>
-                  <div className="relative aspect-3/4 overflow-hidden rounded-md bg-gray-800">
-                    <img
-                      src={movie.image}
-                      alt={movie.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-r from-sky-500 to-pink-500 text-white shadow-xl shadow-sky-500/30">
-                        <FaPlay className="ml-0.5 text-sm" />
-                      </span>
-                    </div>
-                  </div>
-                  <h3 className="mt-2 truncate text-sm font-semibold text-gray-200 transition-colors group-hover:text-sky-400 sm:text-base">
-                    {movie.title}
-                  </h3>
-                </article>
+                <MovieCard
+                  key={movie.slug || movie.title || movie.name}
+                  movie={movie}
+                  rank={index + 1}
+                />
               ))}
             </div>
             {canScrollTopTenLeft && (
@@ -356,7 +478,7 @@ const Home = () => {
                     behavior: "smooth",
                   })
                 }
-                className="absolute left-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/75 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-gray-800"
+                className="absolute left-2 top-1/2 z-20 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/75 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-gray-800 cursor-pointer"
               >
                 <FaChevronLeft aria-hidden="true" />
               </button>
@@ -371,7 +493,7 @@ const Home = () => {
                     behavior: "smooth",
                   })
                 }
-                className="absolute right-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/75 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-gray-800"
+                className="absolute right-2 top-1/2 z-20 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/75 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-gray-800 cursor-pointer"
               >
                 <FaChevronRight aria-hidden="true" />
               </button>
@@ -379,82 +501,35 @@ const Home = () => {
           </div>
         </section>
 
+        {/* New on JioHotstar Row */}
         <section
-          className="px-5 pb-12 pt-7 sm:px-8 lg:px-12"
+          className="px-4 pb-8 pt-5 sm:px-8 sm:pb-10 sm:pt-7 lg:px-12 category-row-contain"
           aria-labelledby="new-releases-heading"
         >
-          <div className="mb-5 flex items-center justify-between gap-4">
+          <div className="mb-3 sm:mb-4 flex items-center justify-between gap-4">
             <h2
               id="new-releases-heading"
-              className="text-xl font-bold text-white sm:text-2xl"
+              className="text-lg font-bold text-white sm:text-2xl drop-shadow"
             >
               New on JioHotstar
             </h2>
             <Link
-              to="/newjio"
-              className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-gray-300 transition-colors hover:text-white"
+              to="/newjio?category=All%20Movies"
+              className="inline-flex shrink-0 items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-300 transition-colors hover:text-white cursor-pointer"
             >
               View all <FaChevronRight aria-hidden="true" />
             </Link>
           </div>
-          <div className="relative">
+          <div className="relative group/row">
             <div
               ref={releasesCarouselRef}
-              className="hide-scrollbar grid grid-flow-col auto-cols-[70%] items-start gap-3 overflow-x-auto overflow-y-hidden pb-4 sm:auto-cols-[35%] sm:gap-4 lg:auto-cols-[20%]"
+              className="hide-scrollbar grid grid-flow-col auto-cols-[45%] sm:auto-cols-[30%] md:auto-cols-[23%] lg:auto-cols-[18%] xl:auto-cols-[15.5%] items-start gap-3 sm:gap-4 overflow-x-auto overflow-y-hidden pb-4 smooth-scroll-x"
             >
               {newReleases.map((release) => (
-                <article
-                  key={release.title}
-                  tabIndex={0}
-                  onClick={() =>
-                    navigate("/watch", { state: { movie: release } })
-                  }
-                  className="group min-w-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sky-400 cursor-pointer"
-                >
-                  <div className="relative aspect-3/4 overflow-hidden rounded-md bg-gray-800">
-                    <img
-                      src={release.image}
-                      alt={release.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.08] group-focus-within:scale-[1.08]"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-gray-950 via-gray-950/80 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100 sm:p-4">
-                      <h3 className="text-base font-bold leading-tight text-white sm:text-lg">
-                        {release.title}
-                      </h3>
-                      <p className="mt-2 text-xs font-semibold text-gray-200 sm:text-sm">
-                        {release.detail}
-                      </p>
-                      <p className="mt-2 line-clamp-3 text-xs leading-5 text-gray-300 sm:text-sm">
-                        {release.description}
-                      </p>
-                      <div className="mt-3 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate("/watch", { state: { movie: release } });
-                          }}
-                          className="glass-button-primary inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-xs sm:text-sm font-bold text-white cursor-pointer"
-                        >
-                          <FaPlay aria-hidden="true" className="text-[10px]" />
-                          Watch Now
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate("/watch", { state: { movie: release } });
-                          }}
-                          aria-label={`Add ${release.title} to your watchlist`}
-                          className="glass-button flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white cursor-pointer"
-                        >
-                          <FaPlus aria-hidden="true" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </article>
+                <MovieCard
+                  key={release.slug || release.title || release.name}
+                  movie={release}
+                />
               ))}
             </div>
             {canScrollReleasesLeft && (
@@ -467,7 +542,7 @@ const Home = () => {
                     behavior: "smooth",
                   })
                 }
-                className="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/75 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-gray-800"
+                className="absolute left-2 top-1/2 z-20 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/75 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-gray-800 cursor-pointer"
               >
                 <FaChevronLeft aria-hidden="true" />
               </button>
@@ -482,13 +557,44 @@ const Home = () => {
                     behavior: "smooth",
                   })
                 }
-                className="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/75 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-gray-800"
+                className="absolute right-2 top-1/2 z-20 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-gray-950/75 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-gray-800 cursor-pointer"
               >
                 <FaChevronRight aria-hidden="true" />
               </button>
             )}
           </div>
         </section>
+
+        {/* 5 Distinct Category Rows */}
+        <MovieCategoryRow
+          title="Action & Sci-Fi Blockbusters"
+          categoryParam="Action & Sci-Fi"
+          movies={actionMovies}
+        />
+
+        <MovieCategoryRow
+          title="Crime & Psychological Thrillers"
+          categoryParam="Crime & Thriller"
+          movies={thrillerMovies}
+        />
+
+        <MovieCategoryRow
+          title="Feel-Good & Family Comedy"
+          categoryParam="Feel-Good Comedy"
+          movies={feelGoodMovies}
+        />
+
+        <MovieCategoryRow
+          title="Romantic & Emotional Dramas"
+          categoryParam="Romance & Drama"
+          movies={romanticMovies}
+        />
+
+        <MovieCategoryRow
+          title="Adventure & Fantasy Hits"
+          categoryParam="Adventure & Fantasy"
+          movies={adventureMovies}
+        />
       </main>
     </div>
   );

@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
-import { homeAloneMovie, newReleases } from "../../data/newReleases";
+import MovieCard from "../../components/common/MovieCard";
+import { useMovies } from "../../hooks/useMovies";
+import { defaultCatalog } from "../../data/defaultCatalog";
 import {
-  FaPlay,
-  FaFire,
   FaLaughSquint,
   FaMask,
+  FaFire,
   FaChild,
-  FaGhost,
   FaRocket,
+  FaGhost,
   FaHeart,
   FaRunning,
   FaDragon,
@@ -21,63 +22,54 @@ const categoryList = [
     icon: FaLaughSquint,
     gradient: "from-amber-500/80 via-orange-600/70 to-rose-600/80",
     description: "Laugh-out-loud hits, family comedies & slapstick classics",
-    sampleMovie: homeAloneMovie,
   },
   {
     name: "Super Heroes",
     icon: FaMask,
     gradient: "from-red-600/80 via-rose-700/70 to-indigo-800/80",
     description: "Marvel & DC cinematic universes, vigilantes & defenders",
-    sampleMovie: newReleases[4] || homeAloneMovie,
   },
   {
     name: "Action",
     icon: FaFire,
     gradient: "from-blue-600/80 via-indigo-600/70 to-cyan-500/80",
     description: "High-octane blockbusters, adrenaline & epic chases",
-    sampleMovie: newReleases[3] || homeAloneMovie,
   },
   {
     name: "Kids & Family",
     icon: FaChild,
     gradient: "from-emerald-500/80 via-teal-600/70 to-cyan-600/80",
     description: "Heartwarming adventures for the whole family to enjoy together",
-    sampleMovie: homeAloneMovie,
   },
   {
     name: "Sci-Fi & Fantasy",
     icon: FaRocket,
     gradient: "from-purple-600/80 via-violet-700/70 to-pink-600/80",
     description: "Futuristic worlds, time travel, space sagas & mythical beasts",
-    sampleMovie: newReleases[4] || homeAloneMovie,
   },
   {
     name: "Horror & Thriller",
     icon: FaGhost,
     gradient: "from-zinc-800/90 via-stone-900/85 to-red-950/90",
     description: "Chilling suspense, supernatural legends & pulse-pounding scares",
-    sampleMovie: newReleases[2] || homeAloneMovie,
   },
   {
     name: "Romance & Drama",
     icon: FaHeart,
     gradient: "from-pink-600/80 via-rose-600/70 to-red-500/80",
     description: "Passionate love stories, emotional journeys & relatable tales",
-    sampleMovie: newReleases[1] || homeAloneMovie,
   },
   {
     name: "Sports",
     icon: FaRunning,
     gradient: "from-blue-700/80 via-sky-600/70 to-cyan-500/80",
     description: "Live cricket, football tournaments & inspiring sports sagas",
-    sampleMovie: newReleases[5] || homeAloneMovie,
   },
   {
     name: "Anime",
     icon: FaDragon,
     gradient: "from-fuchsia-600/80 via-purple-700/70 to-indigo-700/80",
     description: "Epic anime series, grand line journeys & timeless animation",
-    sampleMovie: newReleases[6] || homeAloneMovie,
   },
 ];
 
@@ -94,6 +86,8 @@ const languageHubs = [
 
 const Categories = () => {
   const navigate = useNavigate();
+  const { movies: contextMovies } = useMovies();
+  const allMovies = contextMovies && contextMovies.length > 0 ? contextMovies : defaultCatalog;
   const [selectedCat, setSelectedCat] = useState(null);
 
   const handleOpenCategory = (cat) => {
@@ -101,7 +95,7 @@ const Categories = () => {
   };
 
   const matchingMovies = selectedCat
-    ? newReleases.filter(
+    ? allMovies.filter(
         (m) =>
           m.genres?.some((g) =>
             g.toLowerCase().includes(selectedCat.name.toLowerCase())
@@ -112,8 +106,10 @@ const Categories = () => {
       )
     : [];
 
+  const displayMatching = matchingMovies.length > 0 ? matchingMovies : allMovies.slice(0, 6);
+
   return (
-    <div className="flex min-h-screen w-full flex-row items-start bg-transparent text-white pl-0 md:pl-20">
+    <div className="flex min-h-screen w-full flex-row items-start bg-transparent text-white pl-0 md:pl-20 home-page-enter">
       <Navbar />
 
       <main className="min-w-0 flex-1 overflow-x-hidden px-4 pb-24 pt-8 sm:px-8 lg:px-12">
@@ -145,42 +141,33 @@ const Categories = () => {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedCat(null)}
-                  className="glass-button rounded-xl px-4 py-2 text-xs font-semibold text-gray-200 hover:text-white cursor-pointer"
-                >
-                  Close
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/newjio?category=${encodeURIComponent(selectedCat.name)}`
+                      )
+                    }
+                    className="glass-button-primary rounded-xl px-4 py-2 text-xs font-semibold text-white cursor-pointer"
+                  >
+                    View in Grid
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCat(null)}
+                    className="glass-button rounded-xl px-4 py-2 text-xs font-semibold text-gray-200 hover:text-white cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
 
-              {/* Matching Titles */}
-              <div className="mt-6 grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                {(matchingMovies.length > 0 ? matchingMovies : newReleases.slice(0, 4)).map(
-                  (m) => (
-                    <article
-                      key={m.title}
-                      onClick={() => navigate("/watch", { state: { movie: m } })}
-                      className="glass-card group relative cursor-pointer overflow-hidden rounded-2xl shadow-xl"
-                    >
-                      <div className="aspect-3/4 w-full overflow-hidden">
-                        <img
-                          src={m.image}
-                          alt={m.title}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="glass-panel absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
-                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-950 mb-1.5 shadow-xl">
-                            <FaPlay className="text-[10px] ml-0.5" />
-                          </span>
-                          <h4 className="text-xs font-bold text-white line-clamp-1">
-                            {m.title}
-                          </h4>
-                        </div>
-                      </div>
-                    </article>
-                  )
-                )}
+              {/* Matching Titles Grid with MovieCard format */}
+              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                {displayMatching.map((m) => (
+                  <MovieCard key={m.slug || m.title || m.name} movie={m} />
+                ))}
               </div>
             </div>
           )}
@@ -231,7 +218,7 @@ const Categories = () => {
                   onClick={() =>
                     navigate("/search", { state: { query: lang.name } })
                   }
-                  className="glass-card group cursor-pointer rounded-2xl p-4 text-center shadow-lg"
+                  className="glass-card group cursor-pointer rounded-2xl p-4 text-center shadow-lg movie-card-lift"
                 >
                   <h4 className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">
                     {lang.name}

@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
-import { homeAloneMovie, newReleases } from "../../data/newReleases";
+import { useMovies } from "../../hooks/useMovies";
 import {
   FaHeart,
   FaShare,
@@ -12,7 +12,7 @@ import {
   FaChevronUp,
 } from "react-icons/fa";
 
-const sparksClips = [
+const createSparksClips = (newReleases, homeAloneMovie) => [
   {
     id: 1,
     title: "Kevin's Paint Can Trap",
@@ -66,6 +66,9 @@ const sparksClips = [
 
 const Sparks = () => {
   const navigate = useNavigate();
+  const { movies: newReleases } = useMovies();
+  const homeAloneMovie = newReleases.find((movie) => movie.slug === "home-alone") || { title: "Home Alone", image: "/posters/home-alone.jpg" };
+  const sparksClips = createSparksClips(newReleases, homeAloneMovie);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);

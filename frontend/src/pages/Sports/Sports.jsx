@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
-import heroGodzilla from "../../assets/images/godzilla-minus-zero-3840x2160-27257.jpg";
+const heroGodzilla = "/images/godzilla-minus-zero-3840x2160-27257.jpg";
 import { FaPlay, FaCircle, FaCalendarAlt, FaTrophy } from "react-icons/fa";
 
 const sportsCategories = [

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
-import { homeAloneMovie, newReleases } from "../../data/newReleases";
+import { useMovies } from "../../hooks/useMovies";
+import { useAuth } from "../../hooks/useAuth";
 import {
   FaUserCircle,
   FaCrown,
@@ -13,47 +14,33 @@ import {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { movies } = useMovies();
+  const { user: authUser, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("watchlist");
-
   const user = {
-    name: "Alex Morgan",
-    email: "alex.morgan@jiohotstar.com",
+    name: authUser?.name || "Your account",
+    email: authUser?.email || "Sign in to see your profile",
     plan: "Super Plan · Annual",
     status: "Active · Renews Oct 2027",
     devices: "Up to 2 Devices (Full HD 1080p)",
   };
 
-  const [watchlist, setWatchlist] = useState([
-    homeAloneMovie,
-    newReleases[1],
-    newReleases[2],
-    newReleases[3],
-  ]);
+  const [removedWatchlistTitles, setRemovedWatchlistTitles] = useState([]);
+  const watchlist = movies.filter((movie) => !removedWatchlistTitles.includes(movie.title)).slice(0, 4);
 
-  const continueWatching = [
-    {
-      movie: homeAloneMovie,
-      progress: 68,
-      timeLeft: "32m left",
-    },
-    {
-      movie: newReleases[4] || homeAloneMovie,
-      progress: 42,
-      timeLeft: "1h 12m left",
-    },
-    {
-      movie: newReleases[0] || homeAloneMovie,
-      progress: 85,
-      timeLeft: "18m left",
-    },
-  ];
+  const continueWatching = movies.slice(0, 3).map((movie, index) => ({
+    movie,
+    progress: [68, 42, 85][index],
+    timeLeft: ["32m left", "1h 12m left", "18m left"][index],
+  }));
 
   const handleRemoveFromWatchlist = (e, title) => {
     e.stopPropagation();
-    setWatchlist((prev) => prev.filter((m) => m.title !== title));
+    setRemovedWatchlistTitles((prev) => [...prev, title]);
   };
 
   const handleLogout = () => {
+    signOut();
     navigate("/login");
   };
 

@@ -12,7 +12,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { FiMonitor } from "react-icons/fi";
-import logo from "../../assets/images/logo.png";
+const logo = "/images/logo.png";
 
 const navItems = [
   { href: "/home", label: "Home", icon: FaHome },

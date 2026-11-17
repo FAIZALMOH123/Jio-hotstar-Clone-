@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
-import lanternsImage from "../../assets/images/lanterns-tv-series-3840x2160-27196.jpg";
-import onePieceImage from "../../assets/images/one-piece-season-2-1080x1920-23673.jpg";
-import avatarImage from "../../assets/images/avatar-aang-the-3840x2160-27059.jpg";
-import { newReleases } from "../../data/newReleases";
+import MovieCard from "../../components/common/MovieCard";
+const lanternsImage = "/images/lanterns-tv-series-3840x2160-27196.jpg";
+const onePieceImage = "/images/one-piece-season-2-1080x1920-23673.jpg";
+const avatarImage = "/images/avatar-aang-the-3840x2160-27059.jpg";
+import { useMovies } from "../../hooks/useMovies";
 import { FaPlay } from "react-icons/fa";
 
 const featuredShows = [
@@ -52,7 +53,7 @@ const featuredShows = [
   },
 ];
 
-const bingeWorthyShows = [
+const getBingeWorthyShows = (newReleases) => [
   ...featuredShows,
   {
     title: "Special OPS",
@@ -98,28 +99,34 @@ const bingeWorthyShows = [
   },
 ];
 
+const categories = [
+  "All",
+  "Drama",
+  "Thriller",
+  "Comedy",
+  "Sci-Fi",
+  "Anime",
+  "Action",
+  "Documentary",
+];
+
 const Shows = () => {
   const navigate = useNavigate();
-  const [activeShowIdx, setActiveShowIdx] = useState(0);
+  const { movies: newReleases } = useMovies();
+  const bingeWorthyShows = getBingeWorthyShows(newReleases);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [activeShowIdx, setActiveShowIdx] = useState(0);
 
-  const categories = [
-    "All",
-    "Hotstar Specials",
-    "Action & Thriller",
-    "Fantasy & Sci-Fi",
-    "Comedy",
-    "Anime & Animation",
-  ];
+  const currentHero = featuredShows[activeShowIdx] || featuredShows[0];
 
-  const currentHero = featuredShows[activeShowIdx];
+  const animeSeries = [newReleases[5], newReleases[7], featuredShows[1], featuredShows[2]].filter(Boolean);
 
   return (
-    <div className="flex min-h-screen w-full flex-row items-start bg-transparent text-white pl-0 md:pl-20">
+    <div className="flex min-h-screen w-full flex-row items-start bg-transparent text-white pl-0 md:pl-20 home-page-enter">
       <Navbar />
 
       <main className="min-w-0 flex-1 overflow-x-hidden pb-24">
-        {/* Hero Banner Section */}
+        {/* Shows Hero Showcase */}
         <section className="relative h-[65vh] min-h-120 w-full overflow-hidden">
           <div className="absolute inset-0">
             <img
@@ -167,13 +174,13 @@ const Shows = () => {
                 className="glass-button-primary inline-flex items-center gap-2.5 rounded-2xl px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-xl cursor-pointer"
               >
                 <FaPlay className="text-xs" />
-                <span>Watch Episode 1</span>
+                <span>Watch Trailer</span>
               </button>
 
               <button
                 type="button"
                 onClick={() =>
-                  navigate("/watch", { state: { movie: currentHero } })
+                  navigate("/watch", { state: { movie: currentHero, autoPlay: true } })
                 }
                 className="glass-button inline-flex items-center gap-2 rounded-2xl px-5 py-3.5 text-sm sm:text-base font-semibold text-white cursor-pointer"
               >
@@ -222,77 +229,32 @@ const Shows = () => {
           <h2 className="mb-4 text-xl sm:text-2xl font-bold text-white drop-shadow">
             Binge-Worthy TV Shows
           </h2>
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
             {bingeWorthyShows.map((show) => (
-              <article
-                key={show.title}
-                onClick={() => navigate("/watch", { state: { movie: show } })}
-                className="glass-card group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg"
-              >
-                <div className="aspect-3/4 w-full overflow-hidden">
-                  <img
-                    src={show.image}
-                    alt={show.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                  <div className="glass-panel absolute inset-0 flex flex-col justify-end p-3 opacity-0 transition-opacity group-hover:opacity-100 rounded-2xl">
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-950 mb-2 shadow-xl">
-                      <FaPlay className="ml-0.5 text-xs" />
-                    </span>
-                    <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-1">
-                      {show.title}
-                    </h3>
-                    <p className="text-[11px] text-gray-300">
-                      {show.duration || show.detail}
-                    </p>
-                  </div>
-                </div>
-              </article>
+              <MovieCard
+                key={show.slug || show.title}
+                movie={show}
+              />
             ))}
           </div>
         </section>
 
         {/* Anime & Animation Showcase */}
-        <section className="px-4 pt-10 sm:px-8 lg:px-12">
-          <h2 className="mb-4 text-xl sm:text-2xl font-bold text-white drop-shadow">
-            Anime & International Series
-          </h2>
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {[newReleases[5], newReleases[7], featuredShows[1], featuredShows[2]].map(
-              (item, i) =>
-                item && (
-                  <article
-                    key={`${item.title}-${i}`}
-                    onClick={() =>
-                      navigate("/watch", { state: { movie: item } })
-                    }
-                    className="glass-card group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg"
-                  >
-                    <div className="aspect-3/4 w-full overflow-hidden">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
-                      />
-                      <div className="glass-panel absolute inset-0 flex flex-col justify-end p-3 opacity-0 transition-opacity group-hover:opacity-100 rounded-2xl">
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-950 mb-2 shadow-xl">
-                          <FaPlay className="ml-0.5 text-xs" />
-                        </span>
-                        <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-1">
-                          {item.title}
-                        </h3>
-                        <p className="text-[11px] text-gray-300">
-                          {item.detail || item.duration}
-                        </p>
-                      </div>
-                    </div>
-                  </article>
-                )
-            )}
-          </div>
-        </section>
+        {animeSeries.length > 0 && (
+          <section className="px-4 pt-10 sm:px-8 lg:px-12">
+            <h2 className="mb-4 text-xl sm:text-2xl font-bold text-white drop-shadow">
+              Anime & International Series
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
+              {animeSeries.map((item) => (
+                <MovieCard
+                  key={item.slug || item.title}
+                  movie={item}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );

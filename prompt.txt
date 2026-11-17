@@ -22,3 +22,78 @@ backnd file inside .env node modules and service Account key.json remaining file
 read after clear short summary required 
 
 does nt anything change
+
+---------------------------
+
+
+prompt:2
+
+My plan:
+backend setup
+
+Authentication:
+
+1.i want sign up and sign in api requires 
+
+2. forgot password api required need to verify also 
+
+3. sign up api requires otp gmail or sms (is that free to check in firebase)
+
+important note:
+
+1.don't use any where to use throw errror
+
+2. async await properly uyse rather than promise okay 
+
+3. properly Mntion status code and validation error 
+
+4. i want es modules 
+
+5.this file set up data inserted in the database :
+C:\Users\WELCOME\OneDrive\Desktop\Jio Hotstar Clone\frontend\src\data\newReleases.js
+
+6. list that api ? why was required this api i want detail and short report required
+
+7. how to implement give the idea does not change anything
+
+
+
+prompt:3
+
+1.what to we do now simple report point by point i want 
+
+2. WHAT ARE NOW does not do it now that also requred
+
+
+prompt:4
+
+movie catelog that file i was backed to store ? and firebase has does not image upload i thought could you make it postgreSQL because i think 
+
+postgreSql use what are the disadvantage i had face
+
+
+prompt:5
+
+i want to users inside this field include
+
+1.uid :USER-001(DYNAMICALLY ADD DON'T DUPLICATE SO DUPLICATE  COUNTDOWN COLLCTION CREATE IF USER CREATE COUINTDOWN START AND COUNT RELICATICATE USER COLLECTION)
+2.password: HASHED PASSWORD TO STORED
+3.CONFIRM PASSWORD:HASHED PASSWORD TO STORED
+CREATEDat
+UPDATED AT 
+DOCID 
+
+THIS FOLDER STRUTURE I FOLLOW CONTROLLERS INDEX->ROUTES->CONTRLLERS->SERVICES->UTILLS/BCRYPT.JS->REPO-> DB THIS FOLDER STRUCTURE FOLLOWS 
+
+FIRST WHAT YOU UNDERSTAND EXPLAIN FIRST 
+
+prompt:6
+
+could you this explain folder and files are really important or not ?
+
+C:\Users\WELCOME\OneDrive\Desktop\Jio Hotstar Clone\backend\src\db\seedMovies.js
+C:\Users\WELCOME\OneDrive\Desktop\Jio Hotstar Clone\backend\src\data
+C:\Users\WELCOME\OneDrive\Desktop\Jio Hotstar Clone\backend\src\api\system
+C:\Users\WELCOME\OneDrive\Desktop\Jio Hotstar Clone\backend\src\config
+C:\Users\WELCOME\OneDrive\Desktop\Jio Hotstar Clone\backend\src\api\shared
+

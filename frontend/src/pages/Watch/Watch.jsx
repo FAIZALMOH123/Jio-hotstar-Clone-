@@ -1,11 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
-import {
-  homeAloneMovie,
-  moreLikeThisHomeAlone,
-  newReleases,
-} from "../../data/newReleases";
+import { useMovies } from "../../hooks/useMovies";
+import { getTrailerEmbedUrl } from "../../utils/trailers";
 import {
   FaPlay,
   FaPause,
@@ -27,9 +24,18 @@ import {
   FaDesktop,
 } from "react-icons/fa";
 
+const fallbackHomeAlone = {
+  title: "Home Alone", image: "/posters/home-alone.jpg", year: "1990", rating: "U/A 7+",
+  duration: "1h 42m", detail: "1h 42m", quality: "HD", genres: ["Adventure", "Comedy"],
+  languages: ["English"], description: "Kevin is left behind while his family goes on vacation.",
+  director: "Chris Columbus", starring: "Macaulay Culkin", advisory: "Slapstick Violence",
+};
+
 const Watch = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { movies: newReleases } = useMovies();
+  const homeAloneMovie = newReleases.find((item) => item.slug === "home-alone") || fallbackHomeAlone;
 
   // Active movie: state movie if provided, or default to Home Alone (matching reference)
   const [movie, setMovie] = useState(() => {
@@ -108,6 +114,8 @@ const Watch = () => {
             .map((s) => s.trim())
         : ["Adventure", "Comedy"];
 
+      // Apply the selected route movie to this player view.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMovie({
         title: m.title || m.name || homeAloneMovie.title,
         studio: m.studio || "JioHotstar",
@@ -132,15 +140,26 @@ const Watch = () => {
 
       if (location.state?.autoPlay && videoRef.current) {
         videoRef.current.currentTime = 0;
-        videoRef.current
-          .play()
-          .then(() => setIsPlaying(true))
-          .catch(() => setIsPlaying(false));
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => setIsPlaying(true))
+            .catch(() => {
+              if (videoRef.current) {
+                videoRef.current.muted = true;
+                setIsMuted(true);
+                videoRef.current
+                  .play()
+                  .then(() => setIsPlaying(true))
+                  .catch(() => {});
+              }
+            });
+        }
       }
     }
 
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, [location.state]);
+  }, [location.state, homeAloneMovie]);
 
   // Video playback controls
   const togglePlay = () => {
@@ -417,222 +436,16 @@ const Watch = () => {
                   <FaTimes className="text-sm sm:text-base" />
                 </button>
 
-                {/* Video Element */}
-                <video
-                  ref={videoRef}
-                  poster={movie.image}
-                  className="h-full w-full object-cover cursor-pointer"
-                  playsInline
-                  onClick={togglePlay}
-                  onTimeUpdate={handleTimeUpdate}
-                  onLoadedMetadata={handleLoadedMetadata}
-                  onEnded={() => setIsPlaying(false)}
-                >
-                  <source src="/navbar-reference.mp4" type="video/mp4" />
-                  <source
-                    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-                    type="video/mp4"
-                  />
-                  Your browser does not support HTML5 video.
-                </video>
+                {/* Embedded YouTube Trailer Player */}
+                <iframe
+                  key={movie.title || movie.name}
+                  src={getTrailerEmbedUrl(movie)}
+                  title={`${movie.title || movie.name} Official Trailer`}
+                  className="h-full w-full border-0 rounded-2xl"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
 
-                {/* Glass Play Overlay when video is paused */}
-                {!isPlaying && (
-                  <div
-                    onClick={togglePlay}
-                    className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-[2px] transition-all cursor-pointer hover:bg-black/45"
-                  >
-                    <button
-                      type="button"
-                      aria-label="Play"
-                      className="glass-button flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full text-white transition-transform hover:scale-110 active:scale-95 shadow-2xl"
-                    >
-                      <FaPlay className="ml-1 text-xl sm:text-2xl text-white fill-current" />
-                    </button>
-                  </div>
-                )}
-
-                {/* Liquid Glass Video Controls Bar */}
-                <div
-                  className={`glass-panel absolute inset-x-0 bottom-0 z-20 flex flex-col rounded-b-2xl p-3 sm:p-5 transition-opacity duration-300 ${
-                    showControls && isPlaying
-                      ? "opacity-100"
-                      : "pointer-events-none opacity-0"
-                  }`}
-                >
-                  {/* Progress Seekbar */}
-                  <div className="relative mb-2 sm:mb-3 flex items-center">
-                    <input
-                      type="range"
-                      min="0"
-                      max={duration || 100}
-                      step="0.1"
-                      value={currentTime}
-                      onChange={handleSeek}
-                      className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-sky-400 transition-all hover:h-2.5"
-                    />
-                  </div>
-
-                  {/* Controls Row */}
-                  <div className="flex items-center justify-between text-white text-xs sm:text-sm">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <button
-                        type="button"
-                        onClick={togglePlay}
-                        aria-label={isPlaying ? "Pause" : "Play"}
-                        className="cursor-pointer text-base sm:text-lg hover:text-sky-400 transition-colors"
-                      >
-                        {isPlaying ? <FaPause /> : <FaPlay />}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => skipSeconds(-10)}
-                        aria-label="Rewind 10 seconds"
-                        className="cursor-pointer text-gray-300 hover:text-white transition-colors"
-                      >
-                        <FaUndo />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => skipSeconds(10)}
-                        aria-label="Forward 10 seconds"
-                        className="cursor-pointer text-gray-300 hover:text-white transition-colors"
-                      >
-                        <FaRedo />
-                      </button>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={toggleMute}
-                          aria-label={isMuted ? "Unmute" : "Mute"}
-                          className="cursor-pointer text-gray-300 hover:text-white transition-colors"
-                        >
-                          {isMuted || volume === 0 ? (
-                            <FaVolumeMute />
-                          ) : (
-                            <FaVolumeUp />
-                          )}
-                        </button>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.05"
-                          value={isMuted ? 0 : volume}
-                          onChange={handleVolumeChange}
-                          className="hidden sm:block h-1 w-16 cursor-pointer appearance-none rounded bg-white/30 accent-sky-400"
-                        />
-                      </div>
-
-                      <span className="text-[11px] sm:text-xs text-gray-300 font-medium">
-                        {formatTime(currentTime)} / {formatTime(duration)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <select
-                        value={playbackSpeed}
-                        onChange={(e) =>
-                          changePlaybackSpeed(parseFloat(e.target.value))
-                        }
-                        className="glass-pill cursor-pointer rounded-lg px-2 py-0.5 text-xs text-white outline-none"
-                      >
-                        <option value="0.75" className="bg-gray-900">0.75x</option>
-                        <option value="1" className="bg-gray-900">1x</option>
-                        <option value="1.25" className="bg-gray-900">1.25x</option>
-                        <option value="1.5" className="bg-gray-900">1.5x</option>
-                        <option value="2" className="bg-gray-900">2x</option>
-                      </select>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowSettingsModal((prev) => !prev)}
-                        aria-label="Audio & Subtitles"
-                        className="cursor-pointer text-gray-300 hover:text-white transition-colors"
-                      >
-                        <FaClosedCaptioning />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={toggleFullscreen}
-                        aria-label="Toggle Fullscreen"
-                        className="cursor-pointer text-gray-300 hover:text-white transition-colors"
-                      >
-                        {isFullscreen ? <FaCompress /> : <FaExpand />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Glass Audio & Subtitles Popup Modal */}
-                {showSettingsModal && (
-                  <div className="glass-panel absolute right-3 bottom-16 z-30 w-64 rounded-2xl p-4 text-xs shadow-2xl backdrop-blur-2xl">
-                    <div className="mb-2 flex items-center justify-between border-b border-white/10 pb-2">
-                      <span className="font-bold text-white text-xs">
-                        Audio & Subtitles
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowSettingsModal(false)}
-                        className="text-gray-400 hover:text-white font-bold cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    <div className="mb-3">
-                      <p className="mb-1.5 font-semibold text-gray-400 text-[10px] uppercase">
-                        Audio
-                      </p>
-                      {["English [Original]", "Hindi", "Tamil", "Telugu"].map(
-                        (lang) => (
-                          <button
-                            key={lang}
-                            type="button"
-                            onClick={() => setSelectedAudio(lang)}
-                            className={`flex w-full items-center justify-between py-1 text-left ${
-                              selectedAudio === lang
-                                ? "font-bold text-sky-400"
-                                : "text-gray-300 hover:text-white"
-                            }`}
-                          >
-                            <span>{lang}</span>
-                            {selectedAudio === lang && (
-                              <FaCheck className="text-[10px]" />
-                            )}
-                          </button>
-                        )
-                      )}
-                    </div>
-
-                    <div>
-                      <p className="mb-1.5 font-semibold text-gray-400 text-[10px] uppercase">
-                        Subtitles
-                      </p>
-                      {["Off", "English", "Hindi"].map((sub) => (
-                        <button
-                          key={sub}
-                          type="button"
-                          onClick={() => setSelectedSubtitles(sub)}
-                          className={`flex w-full items-center justify-between py-1 text-left ${
-                            selectedSubtitles === sub
-                              ? "font-bold text-sky-400"
-                              : "text-gray-300 hover:text-white"
-                          }`}
-                        >
-                          <span>{sub}</span>
-                          {selectedSubtitles === sub && (
-                            <FaCheck className="text-[10px]" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </section>
 
@@ -966,7 +779,7 @@ const Watch = () => {
                     <article
                       key={item.title}
                       onClick={() => handleSelectMovie(item)}
-                      className="glass-card group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
+                      className="glass-card group relative cursor-pointer overflow-hidden rounded-xl shadow-lg movie-card-lift transition-all duration-300 ease-out"
                     >
                       <div className="aspect-3/4 w-full overflow-hidden">
                         <img
