@@ -3,6 +3,14 @@
   publish = "dist"
   command = "npm run build"
 
+# Proxy API requests directly to your live Render backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://jio-hotstar-clone-backend.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# Single Page App fallback for React Router
 [[redirects]]
   from = "/*"
   to = "/index.html"
